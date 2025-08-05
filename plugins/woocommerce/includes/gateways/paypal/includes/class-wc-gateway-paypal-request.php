@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Automattic\WooCommerce\Utilities\NumberUtil;
 use Automattic\WooCommerce\Enums\OrderStatus;
+use Automattic\Jetpack\Connection\Client as Jetpack_Connection_Client;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -54,8 +55,19 @@ class WC_Gateway_Paypal_Request {
 	 */
 	protected $endpoint;
 
-
+	/**
+	 * The API version for the proxy endpoint.
+	 *
+	 * @var int
+	 */
 	private const WPCOM_PROXY_ENDPOINT_API_VERSION = 2;
+
+	/**
+	 * The base for the proxy REST endpoint.
+	 *
+	 * @var string
+	 */
+	private const WPCOM_PROXY_REST_BASE = 'transact/paypal_standard/proxy';
 
 	/**
 	 * Constructor.
@@ -114,8 +126,9 @@ class WC_Gateway_Paypal_Request {
 		try {
 			$order_request_params = $this->get_paypal_create_order_request_params( $order );
 
+			$site_id  = \Jetpack_Options::get_option( 'id' );
 			$response = Jetpack_Connection_Client::wpcom_json_api_request_as_blog(
-				'/wc-gateway-paypal-proxy/create-order',
+				sprintf( '/sites/%d/%s/orders', $site_id, self::WPCOM_PROXY_REST_BASE ),
 				self::WPCOM_PROXY_ENDPOINT_API_VERSION,
 				array(
 					'headers' => array( 'Content-Type' => 'application/json' ),
@@ -124,8 +137,8 @@ class WC_Gateway_Paypal_Request {
 				),
 				wp_json_encode(
 					array(
-						'testmode' => $this->gateway->testmode,
-						'order'    => $order_request_params,
+						'test_mode' => $this->gateway->testmode,
+						'order'     => $order_request_params,
 					)
 				),
 				'wpcom'
@@ -186,14 +199,14 @@ class WC_Gateway_Paypal_Request {
 
 		try {
 			if ( 'capture' === $action ) {
-				$endpoint     = 'payments/capture';
+				$endpoint     = '/payments/capture';
 				$request_body = array(
 					'capture_url'     => $action_url,
 					'paypal_order_id' => $paypal_order_id,
-					'testmode'        => $this->gateway->testmode,
+					'test_mode'       => $this->gateway->testmode,
 				);
 			} else {
-				$endpoint     = 'payments/authorize';
+				$endpoint     = '/payments/authorize';
 				$request_body = array(
 					'authorize_url'   => $action_url,
 					'paypal_order_id' => $paypal_order_id,
@@ -201,8 +214,9 @@ class WC_Gateway_Paypal_Request {
 				);
 			}
 
+			$site_id  = \Jetpack_Options::get_option( 'id' );
 			$response = Jetpack_Connection_Client::wpcom_json_api_request_as_blog(
-				'/transact/paypal_standard/' . $endpoint,
+				sprintf( '/sites/%d/%s%s', $site_id, self::WPCOM_PROXY_REST_BASE, $endpoint ),
 				self::WPCOM_PROXY_ENDPOINT_API_VERSION,
 				array(
 					'headers' => array( 'Content-Type' => 'application/json' ),
