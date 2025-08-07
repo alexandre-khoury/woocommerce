@@ -22,8 +22,13 @@ class WC_Gateway_Paypal_Notices {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_head', array( $this, 'add_paypal_tos_notice' ) );
+		add_action( 'admin_notices', array( $this, 'add_paypal_tos_notice' ) );
 		add_action( 'admin_init', array( $this, 'handle_paypal_tos_response' ) );
+
+		// Use admin_head to inject notice on payments settings page.
+		// This bypasses the suppress_admin_notices() function which removes all admin_notices hooks on the payments page
+		// This is a workaround to avoid the notice being suppressed by the suppress_admin_notices() function.
+		add_action( 'admin_head', array( $this, 'add_paypal_tos_notice_on_payments_settings_page' ) );
 	}
 
 	/**
@@ -60,6 +65,22 @@ class WC_Gateway_Paypal_Notices {
 		echo '<a href="' . esc_url( $dismiss_url ) . '" class="components-button is-tertiary">Dismiss</a>';
 		echo '</p>';
 		echo '</div>';
+	}
+
+	/**
+	 * Add the PayPal TOS notice on the Payments settings page.
+	 *
+	 * @return void
+	 */
+	public function add_paypal_tos_notice_on_payments_settings_page() {
+		global $current_tab, $current_section;
+		$is_payments_settings_page = 'woocommerce_page_wc-settings' === get_current_screen()->id && 'checkout' === $current_tab && empty( $current_section );
+
+		// Only add the notice from this callback on the payments settings page.
+		if ( ! $is_payments_settings_page ) {
+			return;
+		}
+		$this->add_paypal_tos_notice();
 	}
 
 	/**
@@ -116,6 +137,7 @@ class WC_Gateway_Paypal_Notices {
 	 * @return void
 	 */
 	private function handle_dismiss_action() {
+		wc_get_logger()->debug( 'handle_dismiss_action' );
 		// Hide the notice.
 		update_option( 'show_woocommerce_paypal_tos_notice', 'no' );
 	}
