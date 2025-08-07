@@ -187,7 +187,7 @@ class WC_Gateway_Paypal extends WC_Payment_Gateway {
 	 *
 	 * @return void
 	 */
-	private function maybe_register_site_with_wpcom() {
+	public function maybe_register_site_with_wpcom() {
 		if ( ! is_admin() ||
 			! WC_Gateway_Paypal_Helper::is_orders_v2_migration_eligible() ||
 			! WC_Gateway_Paypal_Helper::is_tos_accepted()
@@ -718,3 +718,11 @@ class WC_Gateway_Paypal extends WC_Payment_Gateway {
 		);
 	}
 }
+
+add_action(
+	'init',
+	function () {
+		include_once __DIR__ . '/includes/class-wc-gateway-paypal-notices.php';
+		new WC_Gateway_Paypal_Notices();
+	}
+);
