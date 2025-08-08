@@ -58,13 +58,15 @@ class WC_Gateway_Paypal_Notices {
 		$agree_url   = wp_nonce_url( add_query_arg( 'paypal_tos_action', 'agree' ), 'paypal_tos_action' );
 		$dismiss_url = wp_nonce_url( add_query_arg( 'paypal_tos_action', 'dismiss' ), 'paypal_tos_action' );
 
-		echo '<div class="notice notice-warning is-dismissible">';
-		echo '<p>By continuing to use PayPal Standard, you agree to our updated <a href="https://www.example.com" target="_blank">Terms of Service</a>.</p>';
-		echo '<p>';
-		echo '<a href="' . esc_url( $agree_url ) . '" class="components-button is-secondary">Accept</a> ';
-		echo '<a href="' . esc_url( $dismiss_url ) . '" class="components-button is-tertiary">Dismiss</a>';
-		echo '</p>';
-		echo '</div>';
+		$notice_html = '<div class="notice notice-warning is-dismissible">' .
+			'<p>By continuing to use PayPal Standard, you agree to our updated <a href="https://www.example.com" target="_blank">Terms of Service</a>.</p>' .
+			'<p>' .
+			'<a href="' . esc_url( $agree_url ) . '" class="components-button is-secondary">Accept</a> ' .
+			'<a href="' . esc_url( $dismiss_url ) . '" class="components-button is-tertiary">Dismiss</a>' .
+			'</p>' .
+		'</div>';
+
+		echo wp_kses_post( $notice_html );
 	}
 
 	/**
@@ -137,7 +139,6 @@ class WC_Gateway_Paypal_Notices {
 	 * @return void
 	 */
 	private function handle_dismiss_action() {
-		wc_get_logger()->debug( 'handle_dismiss_action' );
 		// Hide the notice.
 		update_option( 'show_woocommerce_paypal_tos_notice', 'no' );
 	}
